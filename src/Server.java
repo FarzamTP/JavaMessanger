@@ -1,33 +1,29 @@
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.io.*;
+import java.net.*;
 
-public class Server {
-    public Server(int port){
-        try {
-            ServerSocket server = new ServerSocket(port);
-            System.out.println("Server has been started!");
-            System.out.println("Waiting for clients to connect...");
-            Socket socket = server.accept();
-            System.out.println("Client connected!");
-            DataInputStream in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
-            String line = "";
-            while (!line.equals("exit")){
-                line = in.readUTF();
-                System.out.println("Client sent: " + line);
+public class Server{
+    public static void main(String[] args) throws IOException
+    {
+        int port = 9999;
+        ServerSocket server = new ServerSocket(port);
+        System.out.println("Server running on localhost using port: " + port);
+
+        while (true){
+            Socket client = null;
+
+            try{
+                client = server.accept();
+                System.out.println("A new client is connected : " + client);
+                DataInputStream input = new DataInputStream(client.getInputStream());
+                DataOutputStream out = new DataOutputStream(client.getOutputStream());
+                System.out.println("Assigning new thread for this client");
+                Thread t = new ClientHandler(client, input, out);
+                t.start();
             }
-            System.out.println("Client disconnected.");
-            socket.close();
-            in.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+            catch (Exception e){
+                client.close();
+                e.printStackTrace();
+            }
         }
     }
-
-    public static void main(String[] args) {
-        Server server = new Server(9999);
-    }
-
 }

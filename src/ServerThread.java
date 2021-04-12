@@ -4,6 +4,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 
 
@@ -35,8 +36,11 @@ public class ServerThread extends Thread {
                 } else {
                     if (userInput.split(":").length == 2){
                         userName = userInput.split(":")[1];
+                        int userPort = socket.getPort();
                         String message = "User " + userName + " joined!";
-//                        fetchResults();
+                        DBConnector dbHandler = new DBConnector();
+                        dbHandler.insertUserToDB(userPort, userName);
+                        dbHandler.fetchRecords("Users");
                         System.out.println(message);
                         printToALlClients(message);
                     } else {
@@ -48,20 +52,6 @@ public class ServerThread extends Thread {
             }
         } catch (Exception e) {
             System.out.println(userName + " disconnected unexpectedly!");
-        }
-    }
-
-    private void fetchResults() throws SQLException, ClassNotFoundException {
-        System.out.println("Connecting to DB...");
-        DBConnector connector = new DBConnector();
-        System.out.println("Running query...");
-        String query = "SELECT * FROM Users;";
-        ResultSet resultSet = connector.runQuery(query);
-
-        while(resultSet.next()) {
-            int port = resultSet.getInt("port");
-            String username = resultSet.getString("username");
-            System.out.println("Port: " + port + " --> Username: " + username);
         }
     }
 

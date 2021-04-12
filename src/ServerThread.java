@@ -2,6 +2,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 
@@ -26,12 +28,15 @@ public class ServerThread extends Thread {
             while(true) {
                 String userInput = input.readLine();
                 if(userInput.equalsIgnoreCase("exit")) {
-                    System.out.println(userName + " left the server!");
+                    String message = userName + " left the server!";
+                    System.out.println(message);
+                    printToALlClients(message);
                     break;
                 } else {
                     if (userInput.split(":").length == 2){
                         userName = userInput.split(":")[1];
                         String message = "User " + userName + " joined!";
+//                        fetchResults();
                         System.out.println(message);
                         printToALlClients(message);
                     } else {
@@ -46,9 +51,23 @@ public class ServerThread extends Thread {
         }
     }
 
+    private void fetchResults() throws SQLException, ClassNotFoundException {
+        System.out.println("Connecting to DB...");
+        DBConnector connector = new DBConnector();
+        System.out.println("Running query...");
+        String query = "SELECT * FROM Users;";
+        ResultSet resultSet = connector.runQuery(query);
+
+        while(resultSet.next()) {
+            int port = resultSet.getInt("port");
+            String username = resultSet.getString("username");
+            System.out.println("Port: " + port + " --> Username: " + username);
+        }
+    }
+
     private void printToALlClients(String outputString) {
         for(ServerThread st: threadList) {
-            if (st.socket == this.socket){
+            if (st.socket == socket){
 //                st.output.println("You: " + outputString);
             } else {
                 st.output.println(outputString);

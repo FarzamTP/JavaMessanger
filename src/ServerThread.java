@@ -1,4 +1,3 @@
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -10,6 +9,7 @@ public class ServerThread extends Thread {
     private Socket socket;
     private ArrayList<ServerThread> threadList;
     private PrintWriter output;
+    private String userName;
 
     public ServerThread(Socket socket, ArrayList<ServerThread> threads) {
         this.socket = socket;
@@ -18,38 +18,41 @@ public class ServerThread extends Thread {
 
     @Override
     public void run() {
-        try {
-            //Reading the input from Client
-            BufferedReader input = new BufferedReader( new InputStreamReader(socket.getInputStream()));
 
-            //returning the output to the client : true statement is to flush the buffer otherwise
-            //we have to do it manuallyy
+        try {
+            BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             output = new PrintWriter(socket.getOutputStream(),true);
 
-
-            //inifite loop for server
             while(true) {
-                String outputString = input.readLine();
-                //if user types exit command
-                if(outputString.equals("exit")) {
+                String userInput = input.readLine();
+                if(userInput.equalsIgnoreCase("exit")) {
+                    System.out.println(userName + " left the server!");
                     break;
+                } else {
+                    if (userInput.split(":").length == 2){
+                        userName = userInput.split(":")[1];
+                        String message = "User " + userName + " joined!";
+                        System.out.println(message);
+                        printToALlClients(message);
+                    } else {
+                        String message = userName + ": " + userInput;
+                        System.out.println(message);
+                        printToALlClients(message);
+                    }
                 }
-                printToALlClients(outputString);
-                //output.println("Server says " + outputString);
-                System.out.println("Server received " + outputString);
-
             }
-
-
         } catch (Exception e) {
-            System.out.println("Error occured " +e.getStackTrace());
+            System.out.println(userName + " disconnected unexpectedly!");
         }
     }
 
     private void printToALlClients(String outputString) {
-        for( ServerThread sT: threadList) {
-            sT.output.println(outputString);
+        for(ServerThread st: threadList) {
+            if (st.socket == this.socket){
+//                st.output.println("You: " + outputString);
+            } else {
+                st.output.println(outputString);
+            }
         }
-
     }
 }

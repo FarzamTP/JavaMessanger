@@ -1,61 +1,45 @@
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 
 public class Client {
 
     public static void main(String[] args) {
-        try (Socket socket = new Socket("localhost", 5000)){
-            //reading the input from server
+        Scanner scanner = new Scanner(System.in);
+        String userInput = "";
+        String userName = "None";
+
+        try{
+            Socket socket = new Socket("localhost", 9999);
+            System.out.println("Connected to server localhost with port 9999");
+
             BufferedReader input = new BufferedReader( new InputStreamReader(socket.getInputStream()));
-
-            //returning the output to the server : true statement is to flush the buffer otherwise
-            //we have to do it manuallyy
             PrintWriter output = new PrintWriter(socket.getOutputStream(),true);
-
-            //taking the user input
-            Scanner scanner = new Scanner(System.in);
-            String userInput;
-            String response;
-            String clientName = "empty";
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
             ClientRunnable clientRun = new ClientRunnable(socket);
 
-
             new Thread(clientRun).start();
-            //loop closes when user enters exit command
 
-            do {
-
-                if (clientName.equals("empty")) {
-                    System.out.println("Enter your name ");
+            while (!userInput.equalsIgnoreCase("Exit")){
+                if (userName.equals("None")) {
+                    System.out.print("Enter your username: ");
                     userInput = scanner.nextLine();
-                    clientName = userInput;
-                    output.println(userInput);
-                    if (userInput.equals("exit")) {
-                        break;
-                    }
+                    System.out.println("Welcome to the server!");
+                    userName = userInput;
+                    writer.write("Username:" + userName + "\n");
                 }
                 else {
-                    String message = ( "(" + clientName + ")" + " message : " );
-                    System.out.println(message);
                     userInput = scanner.nextLine();
-                    output.println(message + " " + userInput);
-                    if (userInput.equals("exit")) {
-                        //reading the input from server
-                        break;
-                    }
+                    writer.write(userInput + "\n");
                 }
-
-            } while (!userInput.equals("exit"));
-
-
-
-
+                writer.flush();
+            }
+            System.out.println("Disconnected from server.\nBye " + userName + "!");
+            writer.close();
+            System.exit(0);
         } catch (Exception e) {
-            System.out.println("Exception occured in client main: " + e.getStackTrace());
+            System.out.println(e.toString());
         }
     }
 }

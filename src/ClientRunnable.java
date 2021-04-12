@@ -8,13 +8,18 @@ public class ClientRunnable implements Runnable {
     private final BufferedReader input;
 
     public ClientRunnable(Socket s) throws IOException {
-        this.input = new BufferedReader( new InputStreamReader(s.getInputStream()));
+        this.input = new BufferedReader(new InputStreamReader(s.getInputStream()));
     }
     @Override
     public void run() {
         try {
             while(true) {
+                String AuthenticationError = "Password incorrect. Authentication failed!\nPlease try again later.";
                 String response = input.readLine();
+                if (response.equals(AuthenticationError)){
+                    System.out.println(AuthenticationError);
+                    System.exit(0);
+                }
                 System.out.println(response);
             }
         } catch (IOException e) {

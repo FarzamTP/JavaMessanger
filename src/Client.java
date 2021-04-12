@@ -8,6 +8,8 @@ public class Client {
         Scanner scanner = new Scanner(System.in);
         String userInput = "";
         String userName = "None";
+        String password;
+        boolean firstTimeLoggedIn;
 
         try{
             Socket socket = new Socket("localhost", 9999);
@@ -17,6 +19,8 @@ public class Client {
             PrintWriter output = new PrintWriter(socket.getOutputStream(),true);
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
+            DBConnector dbHandler = new DBConnector();
+
             ClientRunnable clientRun = new ClientRunnable(socket);
 
             new Thread(clientRun).start();
@@ -24,10 +28,16 @@ public class Client {
             while (!userInput.equalsIgnoreCase("Exit")){
                 if (userName.equals("None")) {
                     System.out.print("Enter your username: ");
-                    userInput = scanner.nextLine();
-                    System.out.println("Welcome to the server!\nYou can leave server by sending 'exit'.");
-                    userName = userInput;
-                    writer.write("Username:" + userName + "\n");
+                    userName = scanner.nextLine();
+                    if (dbHandler.userExists(userName)){
+                        System.out.println("Please enter your password:");
+                        firstTimeLoggedIn = false;
+                    } else {
+                        System.out.println("Please set a password:");
+                        firstTimeLoggedIn = true;
+                    }
+                    password = scanner.nextLine();
+                    writer.write("Username:" + userName + ",Password:" + password + ",FirstTimeLoggedIn:" + firstTimeLoggedIn + "\n");
                 }
                 else {
                     userInput = scanner.nextLine();

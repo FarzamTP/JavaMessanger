@@ -10,6 +10,7 @@ public class ServerThread extends Thread {
     private ArrayList<ServerThread> threadList;
     private PrintWriter output;
     private String userName;
+    private String status;
 
     public ServerThread(Socket socket, ArrayList<ServerThread> threads) {
         this.socket = socket;
@@ -31,16 +32,35 @@ public class ServerThread extends Thread {
                     printToALlClients(message);
                     break;
                 } else {
-                    if (userInput.split(":").length == 2){
-                        userName = userInput.split(":")[1];
-                        int userPort = socket.getPort();
-                        String message = "User " + userName + " joined!";
-                        String password = "NULL";
+                    if (userInput.split(",").length == 3){
                         DBConnector dbHandler = new DBConnector();
-                        dbHandler.insertUserToDB(userPort, userName, password);
-                        dbHandler.fetchRecords("Users");
-                        System.out.println(message);
-                        printToALlClients(message);
+
+                        int userPort = socket.getPort();
+                        String[] tokens = userInput.split(",");
+                        userName = tokens[0].split(":")[1];
+                        String userPassword = tokens[1].split(":")[1];
+                        boolean userFirstTimeLoggedIn = Boolean.parseBoolean(tokens[2].split(":")[1]);
+
+                        if (userFirstTimeLoggedIn){
+                            dbHandler.insertUserToDB(userPort, userName, userPassword);
+                            String message = "User " + userName + " joined us!";
+                            System.out.println(message);
+                            printToALlClients(message);
+                            output.println("Welcome to the server!\nYou can leave server by sending 'exit'.");
+                        } else {
+                            if (dbHandler.authenticateUser(userName, userPassword)){
+                                String message = "User " + userName + " has logged in!";
+                                System.out.println(message);
+                                printToALlClients(message);
+                                output.println("Welcome to the server!\nYou can leave server by sending 'exit'.");
+                            } else {
+                                System.out.println("User " + userName + " failed to log in.");
+                                output.println("Password incorrect. Authentication failed!\nPlease try again later.");
+                                socket.close();
+                                break;
+                            }
+                        }
+
                     } else {
                         String message = userName + ": " + userInput;
                         System.out.println(message);
@@ -56,7 +76,6 @@ public class ServerThread extends Thread {
     private void printToALlClients(String outputString) {
         for(ServerThread st: threadList) {
             if (st.socket == socket){
-//                st.output.println("You: " + outputString);
             } else {
                 st.output.println(outputString);
             }

@@ -13,7 +13,7 @@ public class Server {
             DBConnector dbHandler = new DBConnector();
             dbHandler.dropTable("Users");
             dbHandler.createTableUsers();
-            System.out.println("Database initialized.\nWaiting for client to connect.");
+            System.out.println("Database initialized.\nWaiting for client to connect...");
             while(true) {
                 Socket socket = serversocket.accept();
                 System.out.println("New client " + socket + " has been connected.");

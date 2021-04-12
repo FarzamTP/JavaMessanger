@@ -9,7 +9,7 @@ public class Client {
 
     public Client(String address, int port) throws IOException {
 
-//        Socket socket = new Socket(address, port);
+        Socket socket = new Socket(address, port);
         System.out.println("Connected to server: " + address + " with port: " + port);
         DataInputStream input = new DataInputStream(socket.getInputStream());
         DataOutputStream out = new DataOutputStream(socket.getOutputStream());

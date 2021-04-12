@@ -9,7 +9,11 @@ public class Server {
 
         try {
             ServerSocket serversocket = new ServerSocket(9999);
-            System.out.println("Started socket server.\nWaiting for client to connect.");
+            System.out.println("Started socket server.");
+            DBConnector dbHandler = new DBConnector();
+            dbHandler.dropTable("Users");
+            dbHandler.createTableUsers();
+            System.out.println("Database initialized.\nWaiting for client to connect.");
             while(true) {
                 Socket socket = serversocket.accept();
                 System.out.println("New client " + socket + " has been connected.");

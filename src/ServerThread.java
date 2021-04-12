@@ -2,9 +2,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 
 
@@ -38,8 +35,9 @@ public class ServerThread extends Thread {
                         userName = userInput.split(":")[1];
                         int userPort = socket.getPort();
                         String message = "User " + userName + " joined!";
+                        String password = "NULL";
                         DBConnector dbHandler = new DBConnector();
-                        dbHandler.insertUserToDB(userPort, userName);
+                        dbHandler.insertUserToDB(userPort, userName, password);
                         dbHandler.fetchRecords("Users");
                         System.out.println(message);
                         printToALlClients(message);

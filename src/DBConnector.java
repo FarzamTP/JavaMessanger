@@ -12,7 +12,7 @@ class DBConnector {
         DBConnector connector = new DBConnector();
         System.out.println("Running query...");
 
-        String query = "CREATE TABLE Users (id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, port INT(10), username VARCHAR (128));";
+        String query = "CREATE TABLE Users (id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, port INT(10), username VARCHAR (128), password VARCHAR (128));";
         Statement st = connector.setStatement();
         st.executeUpdate(query);
         System.out.println("Table Users has been created.");
@@ -28,11 +28,11 @@ class DBConnector {
         System.out.println("Table " + tableName + " has been dropped.");
     }
 
-    public void insertUserToDB(int port, String username) throws SQLException {
+    public void insertUserToDB(int port, String username, String password) throws SQLException {
         DBConnector connector = new DBConnector();
         System.out.println("Running query...");
 
-        String query = "INSERT INTO Users (port, username) VALUES (" + port + ", '" + username + "');";
+        String query = "INSERT INTO Users (port, username, password) VALUES (" + port + ", '" + username + "', " + password + ");";
         Statement st = connector.setStatement();
         st.executeUpdate(query);
         System.out.println("User '" + username + "' with port " + port + " has been inserted into table Users.");

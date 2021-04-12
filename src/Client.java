@@ -1,46 +1,61 @@
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.HashMap;
 import java.util.Scanner;
 
 public class Client {
 
-    private java.net.Socket socket = null;
+    public static void main(String[] args) {
+        try (Socket socket = new Socket("localhost", 5000)){
+            //reading the input from server
+            BufferedReader input = new BufferedReader( new InputStreamReader(socket.getInputStream()));
 
-    public Client(String address, int port) throws IOException {
+            //returning the output to the server : true statement is to flush the buffer otherwise
+            //we have to do it manuallyy
+            PrintWriter output = new PrintWriter(socket.getOutputStream(),true);
 
-        Socket socket = new Socket(address, port);
-        System.out.println("Connected to server: " + address + " with port: " + port);
-        DataInputStream input = new DataInputStream(socket.getInputStream());
-        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-        Scanner sc = new Scanner(System.in);
+            //taking the user input
+            Scanner scanner = new Scanner(System.in);
+            String userInput;
+            String response;
+            String clientName = "empty";
 
-        String line = "";
-        while (!line.equals("exit")){
-//            System.out.println(input.readUTF());
-            System.out.print("$ ");
-            line = sc.nextLine();
-//            System.out.println("You sent: " + line);
-            out.writeUTF(line);
+            ClientRunnable clientRun = new ClientRunnable(socket);
 
-            if(line.equalsIgnoreCase("Exit")){
-                System.out.println("Closing this connection : " + socket);
-                socket.close();
-                System.out.println("Connection closed");
-                break;
-            }
+
+            new Thread(clientRun).start();
+            //loop closes when user enters exit command
+
+            do {
+
+                if (clientName.equals("empty")) {
+                    System.out.println("Enter your name ");
+                    userInput = scanner.nextLine();
+                    clientName = userInput;
+                    output.println(userInput);
+                    if (userInput.equals("exit")) {
+                        break;
+                    }
+                }
+                else {
+                    String message = ( "(" + clientName + ")" + " message : " );
+                    System.out.println(message);
+                    userInput = scanner.nextLine();
+                    output.println(message + " " + userInput);
+                    if (userInput.equals("exit")) {
+                        //reading the input from server
+                        break;
+                    }
+                }
+
+            } while (!userInput.equals("exit"));
+
+
+
+
+        } catch (Exception e) {
+            System.out.println("Exception occured in client main: " + e.getStackTrace());
         }
-        sc.close();
-        input.close();
-        out.close();
-    }
-
-    public java.net.Socket getSocket()
-    {
-        return this.socket;
-    }
-
-    public static void main(String[] args) throws IOException {
-        Client client = new Client("localhost", 9999);
     }
 }

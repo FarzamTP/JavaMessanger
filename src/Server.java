@@ -1,33 +1,28 @@
-import java.io.*;
-import java.net.*;
-import java.util.HashMap;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
 
-public class Server{
-    public static int port = 9999;
-    public static HashMap<Integer, Thread> clientHashMap = new HashMap<Integer, Thread>();
+public class Server {
 
-    public static void main(String[] args) throws IOException
-    {
-        ServerSocket server = new ServerSocket(port);
-        System.out.println("Server running on localhost using port: " + port);
+    public static void main(String[] args) {
+        //using serversocket as argument to automatically close the socket
+        //the port number is unique for each server
 
-        while (true){
-            Socket socket = null;
+        //list to add all the clients thread
+        ArrayList<ServerThread> threadList = new ArrayList<>();
+        try (ServerSocket serversocket = new ServerSocket(5000)){
+            while(true) {
+                Socket socket = serversocket.accept();
+                ServerThread serverThread = new ServerThread(socket, threadList);
+                //starting the thread
+                threadList.add(serverThread);
+                serverThread.start();
 
-            try{
-                socket = server.accept();
-                System.out.println("A new client is connected : " + socket);
-                DataInputStream input = new DataInputStream(socket.getInputStream());
-                DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                System.out.println("Assigning new thread for this client");
-                Thread t = new ClientHandler(socket, input, out);
-                clientHashMap.put(socket.getPort(), t);
-                t.start();
+                //get all the list of currently running thread
+
             }
-            catch (Exception e){
-                socket.close();
-                e.printStackTrace();
-            }
+        } catch (Exception e) {
+            System.out.println("Error occured in main: " + e.getStackTrace());
         }
     }
 }

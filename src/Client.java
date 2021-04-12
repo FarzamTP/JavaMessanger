@@ -1,11 +1,15 @@
 import java.io.*;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.Scanner;
 
 public class Client {
 
+    private java.net.Socket socket = null;
+
     public Client(String address, int port) throws IOException {
-        Socket socket = new Socket(address, port);
+
+//        Socket socket = new Socket(address, port);
         System.out.println("Connected to server: " + address + " with port: " + port);
         DataInputStream input = new DataInputStream(socket.getInputStream());
         DataOutputStream out = new DataOutputStream(socket.getOutputStream());
@@ -31,7 +35,12 @@ public class Client {
         out.close();
     }
 
+    public java.net.Socket getSocket()
+    {
+        return this.socket;
+    }
+
     public static void main(String[] args) throws IOException {
-        new Client("localhost", 9999);
+        Client client = new Client("localhost", 9999);
     }
 }

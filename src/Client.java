@@ -25,7 +25,7 @@ public class Client {
                 if (userName.equals("None")) {
                     System.out.print("Enter your username: ");
                     userInput = scanner.nextLine();
-                    System.out.println("Welcome to the server!");
+                    System.out.println("Welcome to the server!\nYou can leave server by sending 'exit'.");
                     userName = userInput;
                     writer.write("Username:" + userName + "\n");
                 }

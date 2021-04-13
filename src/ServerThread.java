@@ -13,6 +13,9 @@ public class ServerThread extends Thread {
     private String userName;
     private String status;
     private boolean busy;
+    private String chatName;
+
+    DBConnector dbHandler = new DBConnector();
 
     public ServerThread(Socket socket, ArrayList<ServerThread> threads) {
         this.socket = socket;
@@ -21,7 +24,6 @@ public class ServerThread extends Thread {
 
     @Override
     public void run() {
-        DBConnector dbHandler = new DBConnector();
 
         try {
             BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -37,6 +39,7 @@ public class ServerThread extends Thread {
                     printToALlClients(message);
                     break;
                 } else {
+                    // e.g. "Username, Password, FirstTimeLoggedIn"
                     if (userInput.split(",").length == 3){
                         int userPort = socket.getPort();
                         String[] tokens = userInput.split(",");
@@ -47,7 +50,8 @@ public class ServerThread extends Thread {
                         if (userFirstTimeLoggedIn){
                             status = "online";
                             busy = false;
-                            dbHandler.insertUserToDB(userPort, userName, userPassword, status, busy);
+                            chatName = "null";
+                            dbHandler.insertUser(userPort, userName, userPassword, status, busy, chatName);
                             String message = "User " + userName + " joined us!";
                             System.out.println(message);
                             printToALlClients(message);
@@ -66,7 +70,34 @@ public class ServerThread extends Thread {
                             }
                         }
 
-                    } else {
+                    } else if (userInput.split(",").length == 5){
+                        String chatType = userInput.split(",")[0];
+                        String chatName = userInput.split(",")[1];
+                        String chatOwner = userInput.split(",")[2];
+                        String chatAttendances = userInput.split(",")[3];
+                        boolean chatActive = Boolean.parseBoolean(userInput.split(",")[4]);
+
+                        ArrayList<String> attendancesArrayList = splitAndConvertToArrayList(chatAttendances);
+
+                        Chat privateChat = new Chat(chatType, chatName, chatOwner, chatAttendances, chatActive);
+                        privateChat.save();
+
+                        String message = "Welcome to " + chatType + " Chat '" + chatName + "' started by " + chatOwner + " with " + chatAttendances;
+                        System.out.println(message);
+                        setChatAttendancesChat(attendancesArrayList, chatName);
+                        setChatAttendancesBusy(attendancesArrayList);
+                        chatAttendancesInformer(attendancesArrayList, message);
+
+                    }
+                    else if (userInput.split("\\|")[0].split(":")[0].equals("ChatName")){
+                        String chatName = userInput.split("\\|")[0].split(":")[1];
+                        String message = "[" + chatName + "] " + userName + ": " + userInput.split("\\|")[1];
+                        System.out.println(message);
+                        String chatAttendances = dbHandler.getChatAttendances(chatName);
+                        ArrayList<String> attendancesArrayList = splitAndConvertToArrayList(chatAttendances);
+                        chatAttendancesInformer(attendancesArrayList, message);
+                    }
+                    else {
                         String message = userName + ": " + userInput;
                         System.out.println(message);
                         printToALlClients(message);
@@ -80,6 +111,34 @@ public class ServerThread extends Thread {
                 error.printStackTrace();
             }
             System.out.println(userName + " disconnected unexpectedly!");
+        }
+    }
+
+    private void setChatAttendancesChat(ArrayList<String> attendancesUsernames, String chatName) throws SQLException {
+        for (String username : attendancesUsernames){
+            dbHandler.alterUserChat(username, chatName);
+        }
+    }
+
+    private void setChatAttendancesBusy(ArrayList<String> attendancesUsernames) throws SQLException {
+        for (String username : attendancesUsernames){
+            dbHandler.alterUserBusy(username, true);
+        }
+    }
+
+    private ArrayList<String> splitAndConvertToArrayList(String attendances){
+        ArrayList<String> attendancesArrayList = new ArrayList<String>();
+        for (String attendanceUsername : attendances.split("\\|")){
+            attendancesArrayList.add(attendanceUsername);
+        }
+        return attendancesArrayList;
+    }
+
+    private void chatAttendancesInformer(ArrayList<String> attendancesUsernames, String message) {
+        for(ServerThread st: threadList) {
+            if (attendancesUsernames.contains(st.userName)){
+                st.output.println(message);
+            }
         }
     }
 

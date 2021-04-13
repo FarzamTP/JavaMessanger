@@ -11,7 +11,7 @@ class DBConnector {
     public void createTableUsers() throws SQLException {
         DBConnector connector = new DBConnector();
 
-        String query = "CREATE TABLE Users (id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, port INT(10), username VARCHAR (128), password VARCHAR (128), status VARCHAR (32), busy BOOLEAN);";
+        String query = "CREATE TABLE Users (id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, port INT(10), username VARCHAR (128), password VARCHAR (128), status VARCHAR (32), busy BOOLEAN, chat VARCHAR (128));";
         Statement st = connector.setStatement();
         st.executeUpdate(query);
         System.out.println("Table Users has been created.");
@@ -26,10 +26,10 @@ class DBConnector {
         System.out.println("Table " + tableName + " has been dropped.");
     }
 
-    public void insertUserToDB(int port, String username, String password, String status, boolean busy) throws SQLException {
+    public void insertUser(int port, String username, String password, String status, boolean busy, String chatName) throws SQLException {
         DBConnector connector = new DBConnector();
 
-        String query = "INSERT INTO Users (port, username, password, status, busy) VALUES (" + port + ", '" + username + "', '" + password + "', '" + status + "', " + busy + ");";
+        String query = "INSERT INTO Users (port, username, password, status, busy, chat) VALUES (" + port + ", '" + username + "', '" + password + "', '" + status + "', " + busy + ", '" + chatName + "');";
         Statement st = connector.setStatement();
         st.executeUpdate(query);
     }
@@ -48,7 +48,8 @@ class DBConnector {
             String username = resultSet.getString("username");
             String status = resultSet.getString("status");
             boolean isBusy = resultSet.getBoolean("busy");
-            System.out.println("Port: " + port + ", Username: " + username + ", Status: " + status + ", isBusy: " + isBusy);
+            String chatName = resultSet.getString("chat");
+            System.out.println("Port: " + port + ", Username: " + username + ", Status: " + status + ", isBusy: " + isBusy + " Chat: " + chatName);
         }
     }
 
@@ -117,6 +118,19 @@ class DBConnector {
         return isBusy;
     }
 
+    public String getChatName(String targetUsername) throws SQLException {
+        String chatName = null;
+        ResultSet resultSet = fetchRecords("Users");
+        while(resultSet.next()) {
+            String username = resultSet.getString("username");
+            chatName = resultSet.getString("chat");
+            if (targetUsername.equals(username)){
+                break;
+            }
+        }
+        return chatName;
+    }
+
     public boolean authenticateUser(String username, String password) throws SQLException {
         if (userExists(username)){
             return password.equals(getUserPassword(username));
@@ -155,5 +169,54 @@ class DBConnector {
         }
     }
 
+    public void alterUserChat(String targetUsername, String newChat) throws SQLException {
+        DBConnector connector = new DBConnector();
+
+        String query = "UPDATE Users SET chat = '" + newChat + "' WHERE username = '" + targetUsername + "';";
+        ResultSet resultSet = fetchRecords("Users");
+
+        while(resultSet.next()) {
+            String username = resultSet.getString("username");
+            if (username.equals(targetUsername)){
+                Statement st = connector.setStatement();
+                st.executeUpdate(query);
+            }
+        }
+    }
+
+    public void createTableChats() throws SQLException {
+        DBConnector connector = new DBConnector();
+
+        String query = "CREATE TABLE Chats (id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, type VARCHAR(32), name VARCHAR (128), owner VARCHAR (128), attendances VARCHAR (1028), active BOOLEAN);";
+        Statement st = connector.setStatement();
+        st.executeUpdate(query);
+        System.out.println("Table Chats has been created.");
+    }
+
+    public void insertChat(String chatType, String chatName, String chatOwnerUsername, String attendances, boolean isActive) throws SQLException {
+        DBConnector connector = new DBConnector();
+        String query = "INSERT INTO Chats (type, name, owner, attendances, active) VALUES ('" + chatType + "', '" + chatName + "', '" + chatOwnerUsername + "', '" + attendances + "', " + isActive + ");";
+        Statement st = connector.setStatement();
+        st.executeUpdate(query);
+    }
+
+    public String getChatAttendances(String chatName) throws SQLException {
+        String chatAttendances = null;
+        ResultSet resultSet = fetchRecords("Chats");
+        while(resultSet.next()) {
+            String name = resultSet.getString("name");
+            chatAttendances = resultSet.getString("attendances");
+            if (chatName.equalsIgnoreCase(name)){
+                break;
+            }
+        }
+        return chatAttendances;
+    }
+
+    public static void main(String[] args) throws SQLException {
+        DBConnector db = new DBConnector();
+        String a = db.getChatName("Farzam");
+        System.out.println(a);
+    }
 }
 

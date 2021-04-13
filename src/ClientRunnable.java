@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -12,9 +13,11 @@ public class ClientRunnable implements Runnable {
     private String userName;
     private boolean isUserBusy;
     private Socket socket;
+    private PrintWriter output;
 
     public ClientRunnable(Socket s) throws IOException {
         this.input = new BufferedReader(new InputStreamReader(s.getInputStream()));
+        output = new PrintWriter(s.getOutputStream(),true);
         this.socket = s;
 
     }
@@ -28,7 +31,7 @@ public class ClientRunnable implements Runnable {
 
                 String AuthenticationError = "Password incorrect. Authentication failed, please try again later.";
                 String helpTextTrigger = "Welcome to the server! You can leave server by sending 'exit'.";
-                String helpText = "1. Use Private Chat\n2. Use Group Chat\n3. Use Channels";
+                String helpText = "1. Use Private Chat\n2. Use Group Chat\n3. Use Channels\n4. Wait for chat invitations";
 
                 String response = input.readLine();
 
@@ -51,17 +54,27 @@ public class ClientRunnable implements Runnable {
                             String targetUsername = scanner.nextLine();
                             if (dbHandler.userExists(targetUsername)){
                                 String targetUserStatus = dbHandler.getUserStatus(targetUsername);
+                                boolean targetUserBusy = dbHandler.getUserBusy(targetUsername);
                                 if (targetUserStatus.equals("online")){
-                                    System.out.println("OK! will implement it soon!");
-                                    System.out.println("User " + userName + " is busy now!");
-                                    isUserBusy = true;
-                                    dbHandler.alterUserBusy(userName, isUserBusy);
+                                    if (!targetUserBusy) {
+                                        isUserBusy = true;
+                                        String chatName = userName + "&" + targetUsername;
+                                        String chatAttendances = userName + "|" + targetUsername;
+                                        String message = "Private," + chatName + "," + userName + "," + chatAttendances + ",true";
+                                        output.println(message);
+                                    } else {
+                                        System.out.println("User " + targetUsername + " is busy now!");
+                                    }
                                 } else {
                                     System.out.println("User " + targetUsername + " is currently offline.");
                                 }
                             } else {
                                 System.out.println("User doesn't exists.");
                             }
+                        }
+                        else if (userChoice.equals("4")){
+                            System.out.println("Waiting for invitations...");
+                            isUserBusy = true;
                         }
                     }
                 }

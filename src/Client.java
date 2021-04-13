@@ -17,7 +17,6 @@ public class Client {
 
             BufferedReader input = new BufferedReader( new InputStreamReader(socket.getInputStream()));
             PrintWriter output = new PrintWriter(socket.getOutputStream(),true);
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
             DBConnector dbHandler = new DBConnector();
 
@@ -37,18 +36,19 @@ public class Client {
                         firstTimeLoggedIn = true;
                     }
                     password = scanner.nextLine();
-                    writer.write("Username:" + userName + ",Password:" + password + ",FirstTimeLoggedIn:" + firstTimeLoggedIn + "\n");
+                    output.println("Username:" + userName + ",Password:" + password + ",FirstTimeLoggedIn:" + firstTimeLoggedIn);
                 }
                 else {
                     if (dbHandler.getUserBusy(userName)){
+                        String chatName = dbHandler.getChatName(userName);
                         userInput = scanner.nextLine();
-                        writer.write(userInput + "\n");
+                        String finalUserInput = "ChatName:" + chatName + "|" + userInput;
+                        output.println(finalUserInput);
                     }
                 }
-                writer.flush();
             }
             System.out.println("Disconnected from server.\nBye " + userName + "!");
-            writer.close();
+            output.close();
             System.exit(0);
         } catch (Exception e) {
             System.out.println(e.toString());

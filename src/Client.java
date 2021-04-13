@@ -40,8 +40,10 @@ public class Client {
                     writer.write("Username:" + userName + ",Password:" + password + ",FirstTimeLoggedIn:" + firstTimeLoggedIn + "\n");
                 }
                 else {
-                    userInput = scanner.nextLine();
-                    writer.write(userInput + "\n");
+                    if (dbHandler.getUserBusy(userName)){
+                        userInput = scanner.nextLine();
+                        writer.write(userInput + "\n");
+                    }
                 }
                 writer.flush();
             }

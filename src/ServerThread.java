@@ -55,9 +55,7 @@ public class ServerThread extends Thread {
                                 output.println("Welcome to the server!\nYou can leave server by sending 'exit'.");
                             } else {
                                 System.out.println("User " + userName + " failed to log in.");
-                                output.println("Password incorrect. Authentication failed!\nPlease try again later.");
-                                socket.close();
-                                break;
+                                output.println("Password incorrect. Authentication failed, please try again later.");
                             }
                         }
 

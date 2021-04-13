@@ -10,13 +10,14 @@ public class ClientRunnable implements Runnable {
     public ClientRunnable(Socket s) throws IOException {
         this.input = new BufferedReader(new InputStreamReader(s.getInputStream()));
     }
+
     @Override
     public void run() {
         try {
             while(true) {
-                String AuthenticationError = "Password incorrect. Authentication failed!\nPlease try again later.";
+                String AuthenticationError = "Password incorrect. Authentication failed, please try again later.";
                 String response = input.readLine();
-                if (response.equals(AuthenticationError)){
+                if (response.equals(AuthenticationError)) {
                     System.out.println(AuthenticationError);
                     System.exit(0);
                 }

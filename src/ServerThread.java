@@ -68,12 +68,11 @@ public class ServerThread extends Thread {
                             }
                         }
 
-                    } else if (userInput.split(",").length == 5){
+                    } else if (userInput.split(",").length == 4){
                         String chatType = userInput.split(",")[0];
                         String chatName = userInput.split(",")[1];
                         String chatOwner = userInput.split(",")[2];
                         String chatAttendances = userInput.split(",")[3];
-                        boolean chatActive = Boolean.parseBoolean(userInput.split(",")[4]);
 
                         chatAttendances = includeOwnerInAttendances(userName, chatAttendances);
                         ArrayList<String> attendancesArrayList = splitAndConvertToArrayList(chatAttendances);
@@ -101,17 +100,26 @@ public class ServerThread extends Thread {
                     }
                     else if (userInput.split("\\|")[0].split(":")[0].equals("ChatName")){
                         String chatName = userInput.split("\\|")[0].split(":")[1];
+                        String chatType = dbHandler.getChatType(chatName);
+                        String chatOwner = dbHandler.getChatOwner(chatName);
+
                         String msg = userInput.split("\\|")[1];
                         String message = "[" + chatName + "] " + userName + ": " + msg;
-                        System.out.println(message);
+
                         String chatAttendances = dbHandler.getChatAttendances(chatName);
                         ArrayList<String> attendancesArrayList = splitAndConvertToArrayList(chatAttendances);
-                        chatAttendancesSendMessages(attendancesArrayList, message);
-                    }
-                    else {
-                        String message = userName + ": " + userInput;
-                        System.out.println(message);
-                        printToALlClients(message);
+
+                        if (chatType.equals("Channel")){
+                            if (chatOwner.equals(userName)){
+                                chatAttendancesSendMessages(attendancesArrayList, message);
+                                System.out.println(message);
+                            } else {
+                                message = "[" + chatName + "] " + "You are not channel creator, and you can not send messages.";
+                                output.println(message);
+                            }
+                        } else {
+                            chatAttendancesSendMessages(attendancesArrayList, message);
+                        }
                     }
                 }
             }

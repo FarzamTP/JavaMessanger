@@ -201,6 +201,32 @@ class DBConnector {
         return chatAttendances;
     }
 
+    public String getChatType(String chatName) throws SQLException {
+        String chatType = null;
+        ResultSet resultSet = fetchRecords("Chats");
+        while(resultSet.next()) {
+            String name = resultSet.getString("name");
+            chatType = resultSet.getString("type");
+            if (chatName.equalsIgnoreCase(name)){
+                break;
+            }
+        }
+        return chatType;
+    }
+
+    public String getChatOwner(String chatName) throws SQLException {
+        String chatOwner = null;
+        ResultSet resultSet = fetchRecords("Chats");
+        while(resultSet.next()) {
+            String name = resultSet.getString("name");
+            chatOwner = resultSet.getString("owner");
+            if (chatName.equalsIgnoreCase(name)){
+                break;
+            }
+        }
+        return chatOwner;
+    }
+
 //    public static void main(String[] args) throws SQLException {
 //        DBConnector db = new DBConnector();
 //    }

@@ -69,7 +69,7 @@ public class ClientRunnable implements Runnable {
                         String chatAttendances = scanner.nextLine();
                         System.out.println("enter your channel's name:");
                         String chatName = scanner.nextLine();
-                        String message = "Channel," + chatName + "," + userName + "," + chatAttendances + ",true";
+                        String message = "Channel," + chatName + "," + userName + "," + chatAttendances;
                         output.println(message);
                     }
                     else if (userChoice.equals("4")){

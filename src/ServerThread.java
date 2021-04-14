@@ -35,8 +35,7 @@ public class ServerThread extends Thread {
                     dbHandler.alterUserStatus(userName, status);
                     String message = userName + " left the server!";
                     System.out.println(message);
-                    printToALlClients(message);
-                    break;
+                    output.println("[Left Server]");
                 } else {
                     // e.g. "Username, Password, FirstTimeLoggedIn"
                     if (userInput.split(",").length == 3){
@@ -52,7 +51,6 @@ public class ServerThread extends Thread {
                             dbHandler.insertUser(userPort, userName, userPassword, status, chatName);
                             String message = "User " + userName + " joined us!";
                             System.out.println(message);
-//                            printToALlClients(message);
                             output.println("Welcome to the server! You can leave server by sending 'exit'.");
                         } else {
                             if (dbHandler.authenticateUser(userName, userPassword)){
@@ -60,7 +58,6 @@ public class ServerThread extends Thread {
                                 dbHandler.alterUserStatus(userName, status);
                                 String message = "User " + userName + " has logged in!";
                                 System.out.println(message);
-                                printToALlClients(message);
                                 output.println("Welcome to the server! You can leave server by sending 'exit'.");
                             } else {
                                 System.out.println("User " + userName + " failed to log in.");
@@ -106,19 +103,31 @@ public class ServerThread extends Thread {
                         String msg = userInput.split("\\|")[1];
                         String message = "[" + chatName + "] " + userName + ": " + msg;
 
-                        String chatAttendances = dbHandler.getChatAttendances(chatName);
-                        ArrayList<String> attendancesArrayList = splitAndConvertToArrayList(chatAttendances);
+                        if (msg.equalsIgnoreCase("exit")){
+                            String userChat = dbHandler.getChatName(userName);
+                            String userChatAttendances = dbHandler.getChatAttendances(userChat);
+                            ArrayList<String> userChatAttendancesArrayList = splitAndConvertToArrayList(userChatAttendances);
 
-                        if (chatType.equals("Channel")){
-                            if (chatOwner.equals(userName)){
-                                chatAttendancesSendMessages(attendancesArrayList, message);
-                                System.out.println(message);
-                            } else {
-                                message = "[" + chatName + "] " + "You are not channel creator, and you can not send messages.";
-                                output.println(message);
-                            }
+                            dbHandler.alterUserBusy(userName, false);
+
+                            output.println("You left the chat " + userChat);
+                            chatAttendancesSendMessages(userChatAttendancesArrayList, "User " + userName + " left the chat.");
+                            output.println("Welcome to the server! You can leave server by sending 'exit'.");
                         } else {
-                            chatAttendancesSendMessages(attendancesArrayList, message);
+                            String chatAttendances = dbHandler.getChatAttendances(chatName);
+                            ArrayList<String> attendancesArrayList = splitAndConvertToArrayList(chatAttendances);
+
+                            if (chatType.equals("Channel")){
+                                if (chatOwner.equals(userName)){
+                                    chatAttendancesSendMessages(attendancesArrayList, message);
+                                    System.out.println(message);
+                                } else {
+                                    message = "[" + chatName + "] " + "You are not channel creator, and you can not send messages.";
+                                    output.println(message);
+                                }
+                            } else {
+                                chatAttendancesSendMessages(attendancesArrayList, message);
+                            }
                         }
                     }
                 }
@@ -189,15 +198,6 @@ public class ServerThread extends Thread {
         for(ServerThread st: threadList) {
             if (attendancesUsernames.contains(st.userName)){
                 st.output.println(message);
-            }
-        }
-    }
-
-    private void printToALlClients(String outputString) {
-        for(ServerThread st: threadList) {
-            if (st.socket == socket){
-            } else {
-                st.output.println(outputString);
             }
         }
     }

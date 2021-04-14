@@ -24,7 +24,7 @@ public class Client {
 
             new Thread(clientRun).start();
 
-            while (!userInput.equalsIgnoreCase("Exit")){
+            while (true){
                 if (userName.equals("None")) {
                     System.out.print("Enter your username: ");
                     userName = scanner.nextLine();
@@ -47,9 +47,6 @@ public class Client {
                     }
                 }
             }
-            System.out.println("Disconnected from server.\nBye " + userName + "!");
-            output.close();
-            System.exit(0);
         } catch (Exception e) {
             System.out.println(e.toString());
         }

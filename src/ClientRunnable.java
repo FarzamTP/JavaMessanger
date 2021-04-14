@@ -30,6 +30,7 @@ public class ClientRunnable implements Runnable {
                 String authenticationError = "Password incorrect. Authentication failed, please try again later.";
                 String helpTextTrigger = "Welcome to the server! You can leave server by sending 'exit'.";
                 String helpText = "1. Use Private Chat\n2. Use Group Chat\n3. Use Channels\n4. Wait for chat invitations";
+                String exitText = "[Left Server]";
 
                 String response = input.readLine();
 
@@ -49,7 +50,7 @@ public class ClientRunnable implements Runnable {
                         String targetUsername = scanner.nextLine();
                         String chatName = userName + "&" + targetUsername;
                         String chatAttendances = userName + "|" + targetUsername;
-                        String message = "Private," + chatName + "," + userName + "," + chatAttendances + ",true";
+                        String message = "Private," + chatName + "," + userName + "," + chatAttendances;
                         output.println(message);
                     }
                     else if (userChoice.equals("2")) {
@@ -59,7 +60,7 @@ public class ClientRunnable implements Runnable {
                         String chatAttendances = scanner.nextLine();
                         System.out.println("enter your group's name:");
                         String chatName = scanner.nextLine();
-                        String message = "Group," + chatName + "," + userName + "," + chatAttendances + ",true";
+                        String message = "Group," + chatName + "," + userName + "," + chatAttendances;
                         output.println(message);
                     }
                     else if (userChoice.equals("3")){
@@ -78,6 +79,12 @@ public class ClientRunnable implements Runnable {
                     else {
                         System.out.println("[ERROR] Operation number not found.");
                     }
+                }
+                else if (response.equals(exitText)){
+                    System.out.println("Disconnected from the server.\nBye " + userName);
+                    output.close();
+                    socket.close();
+                    System.exit(0);
                 }
                 else {
                     System.out.println(response);

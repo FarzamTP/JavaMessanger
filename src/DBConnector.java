@@ -227,8 +227,10 @@ class DBConnector {
         return chatOwner;
     }
 
-//    public static void main(String[] args) throws SQLException {
-//        DBConnector db = new DBConnector();
-//    }
+    public static void main(String[] args) throws SQLException {
+        DBConnector db = new DBConnector();
+        boolean a = db.getUserBusy("Test1");
+        System.out.println(a);
+    }
 }
 

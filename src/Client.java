@@ -29,10 +29,10 @@ public class Client {
                     System.out.print("Enter your username: ");
                     userName = scanner.nextLine();
                     if (dbHandler.userExists(userName)){
-                        System.out.println("Please enter your password:");
+                        System.out.print("Please enter your password: ");
                         firstTimeLoggedIn = false;
                     } else {
-                        System.out.println("Please set a password:");
+                        System.out.print("Please set a password: ");
                         firstTimeLoggedIn = true;
                     }
                     password = scanner.nextLine();

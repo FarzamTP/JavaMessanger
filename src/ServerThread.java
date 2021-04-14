@@ -12,7 +12,6 @@ public class ServerThread extends Thread {
     private PrintWriter output;
     private String userName;
     private String status;
-    private boolean busy;
     private String chatName;
 
     DBConnector dbHandler = new DBConnector();
@@ -49,12 +48,11 @@ public class ServerThread extends Thread {
 
                         if (userFirstTimeLoggedIn){
                             status = "online";
-                            busy = false;
                             chatName = "null";
-                            dbHandler.insertUser(userPort, userName, userPassword, status, busy, chatName);
+                            dbHandler.insertUser(userPort, userName, userPassword, status, chatName);
                             String message = "User " + userName + " joined us!";
                             System.out.println(message);
-                            printToALlClients(message);
+//                            printToALlClients(message);
                             output.println("Welcome to the server! You can leave server by sending 'exit'.");
                         } else {
                             if (dbHandler.authenticateUser(userName, userPassword)){
@@ -77,25 +75,38 @@ public class ServerThread extends Thread {
                         String chatAttendances = userInput.split(",")[3];
                         boolean chatActive = Boolean.parseBoolean(userInput.split(",")[4]);
 
+                        chatAttendances = includeOwnerInAttendances(userName, chatAttendances);
                         ArrayList<String> attendancesArrayList = splitAndConvertToArrayList(chatAttendances);
 
-                        Chat privateChat = new Chat(chatType, chatName, chatOwner, chatAttendances, chatActive);
-                        privateChat.save();
+                        if (checkIfAttendancesExist(attendancesArrayList)){
+                            if (checkIfAttendancesReady(attendancesArrayList)){
+                                String message = "Welcome to " + chatType + " Chat '" + chatName + "' started by " + chatOwner + " with " + chatAttendances;
 
-                        String message = "Welcome to " + chatType + " Chat '" + chatName + "' started by " + chatOwner + " with " + chatAttendances;
-                        System.out.println(message);
-                        setChatAttendancesChat(attendancesArrayList, chatName);
-                        setChatAttendancesBusy(attendancesArrayList);
-                        chatAttendancesInformer(attendancesArrayList, message);
+                                setChatAttendancesChat(attendancesArrayList, chatName);
+                                setChatAttendancesBusy(attendancesArrayList);
+                                chatAttendancesSendMessages(attendancesArrayList, message);
 
+                                System.out.println(message);
+
+                                Chat chat = new Chat(chatType, chatName, chatOwner, chatAttendances);
+                                chat.save();
+                            } else {
+                                output.println("[ERROR] one or more of selected users are not `ready` to chat.\nPlease try again.");
+                                output.println("Welcome to the server! You can leave server by sending 'exit'.");
+                            }
+                        } else {
+                            output.println("[ERROR] one or more of selected users don't exist.\nPlease try again.");
+                            output.println("Welcome to the server! You can leave server by sending 'exit'.");
+                        }
                     }
                     else if (userInput.split("\\|")[0].split(":")[0].equals("ChatName")){
                         String chatName = userInput.split("\\|")[0].split(":")[1];
-                        String message = "[" + chatName + "] " + userName + ": " + userInput.split("\\|")[1];
+                        String msg = userInput.split("\\|")[1];
+                        String message = "[" + chatName + "] " + userName + ": " + msg;
                         System.out.println(message);
                         String chatAttendances = dbHandler.getChatAttendances(chatName);
                         ArrayList<String> attendancesArrayList = splitAndConvertToArrayList(chatAttendances);
-                        chatAttendancesInformer(attendancesArrayList, message);
+                        chatAttendancesSendMessages(attendancesArrayList, message);
                     }
                     else {
                         String message = userName + ": " + userInput;
@@ -107,11 +118,43 @@ public class ServerThread extends Thread {
         } catch (Exception e) {
             try {
                 dbHandler.alterUserStatus(userName, "offline");
+                dbHandler.alterUserBusy(userName, false);
             } catch (SQLException error) {
                 error.printStackTrace();
             }
             System.out.println(userName + " disconnected unexpectedly!");
         }
+    }
+
+    private String includeOwnerInAttendances(String userName, String attendances) {
+        if (!attendances.contains(userName)){
+            attendances += ("|" + userName);
+        }
+        return attendances;
+    }
+
+    private boolean checkIfAttendancesExist(ArrayList<String> attendancesArrayList) throws SQLException {
+        boolean allAttendancesExist = true;
+        for (String username : attendancesArrayList){
+            if (!dbHandler.userExists(username)){
+                allAttendancesExist = false;
+            }
+        }
+        return allAttendancesExist;
+    }
+
+    private boolean checkIfAttendancesReady(ArrayList<String> attendancesUsernamesArrayList) throws SQLException {
+        boolean allAttendancesReady = true;
+
+        for (String username: attendancesUsernamesArrayList){
+            boolean ifUserBusy = dbHandler.getUserBusy(username);
+            String userStatus = dbHandler.getUserStatus(username);
+
+            if (ifUserBusy || userStatus.equalsIgnoreCase("offline")){
+                allAttendancesReady = false;
+            }
+        }
+        return allAttendancesReady;
     }
 
     private void setChatAttendancesChat(ArrayList<String> attendancesUsernames, String chatName) throws SQLException {
@@ -134,7 +177,7 @@ public class ServerThread extends Thread {
         return attendancesArrayList;
     }
 
-    private void chatAttendancesInformer(ArrayList<String> attendancesUsernames, String message) {
+    private void chatAttendancesSendMessages(ArrayList<String> attendancesUsernames, String message) {
         for(ServerThread st: threadList) {
             if (attendancesUsernames.contains(st.userName)){
                 st.output.println(message);

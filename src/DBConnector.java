@@ -11,7 +11,7 @@ class DBConnector {
     }
 
     public void createTableUsers() throws SQLException {
-        String query = "CREATE TABLE Users (id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, port INT(10), username VARCHAR (128), password VARCHAR (128), status VARCHAR (32), busy BOOLEAN, chat VARCHAR (128));";
+        String query = "CREATE TABLE Users (id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, port INT(10), username VARCHAR (128), password VARCHAR (128), status VARCHAR (32), busy BOOLEAN, ready BOOLEAN, chat VARCHAR (128));";
         Statement st = connector.setStatement();
         st.executeUpdate(query);
         System.out.println("Table Users has been created.");
@@ -27,8 +27,7 @@ class DBConnector {
 
     public void insertUser(int port, String username, String password, String status, String chatName) throws SQLException {
 
-        String query = "INSERT INTO Users (port, username, password, status, busy, chat) VALUES (" + port + ", '" + username + "', '" + password + "', '" + status + "', false, '" + chatName + "');";
-        System.out.println(query);
+        String query = "INSERT INTO Users (port, username, password, status, busy, ready, chat) VALUES (" + port + ", '" + username + "', '" + password + "', '" + status + "', false, false, '" + chatName + "');";
         Statement st = connector.setStatement();
         st.executeUpdate(query);
     }
@@ -37,17 +36,6 @@ class DBConnector {
         String query = "SELECT * FROM " + tableName + ";";
         Statement st = connector.setStatement();
         return st.executeQuery(query);
-    }
-
-    public void printRecords(ResultSet resultSet) throws SQLException {
-        while(resultSet.next()) {
-            int port = resultSet.getInt("port");
-            String username = resultSet.getString("username");
-            String status = resultSet.getString("status");
-            boolean isBusy = resultSet.getBoolean("busy");
-            String chatName = resultSet.getString("chat");
-            System.out.println("Port: " + port + ", Username: " + username + ", Status: " + status + ", isBusy: " + isBusy + " Chat: " + chatName);
-        }
     }
 
     public boolean userExists(String targetUsername) throws SQLException {
@@ -151,6 +139,19 @@ class DBConnector {
 
     public void alterUserBusy(String targetUsername, boolean newBusy) throws SQLException {
         String query = "UPDATE Users SET busy = " + newBusy + " WHERE username = '" + targetUsername + "';";
+        ResultSet resultSet = fetchRecords("Users");
+
+        while(resultSet.next()) {
+            String username = resultSet.getString("username");
+            if (username.equals(targetUsername)){
+                Statement st = connector.setStatement();
+                st.executeUpdate(query);
+            }
+        }
+    }
+
+    public void alterUserReady(String targetUsername, boolean newReady) throws SQLException {
+        String query = "UPDATE Users SET ready = " + newReady + " WHERE username = '" + targetUsername + "';";
         ResultSet resultSet = fetchRecords("Users");
 
         while(resultSet.next()) {

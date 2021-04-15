@@ -109,6 +109,7 @@ public class ServerThread extends Thread {
                             ArrayList<String> userChatAttendancesArrayList = splitAndConvertToArrayList(userChatAttendances);
 
                             dbHandler.alterUserBusy(userName, false);
+                            dbHandler.alterUserReady(userName, false);
 
                             output.println("You left the chat " + userChat);
                             chatAttendancesSendMessages(userChatAttendancesArrayList, "User " + userName + " left the chat.");

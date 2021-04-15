@@ -20,6 +20,17 @@ public class ClientRunnable implements Runnable {
         this.socket = s;
     }
 
+    private void printReadyUsers(ResultSet resultSet) throws SQLException {
+        while(resultSet.next()) {
+            String username = resultSet.getString("username");
+            String status = resultSet.getString("status");
+            boolean ready = resultSet.getBoolean("ready");
+            if (!username.equals(userName) && ready && status.equals("online")){
+                System.out.println("Username: " + username + ", Status: " + status + " Ready: " + ready);
+            }
+        }
+    }
+
     @Override
     public void run() {
         try {
@@ -45,7 +56,7 @@ public class ClientRunnable implements Runnable {
                     String userChoice = scanner.nextLine();
                     if (userChoice.equals("1")){
                         ResultSet resultSet = dbHandler.fetchRecords("Users");
-                        dbHandler.printRecords(resultSet);
+                        printReadyUsers(resultSet);
                         System.out.print("Enter username to start a PvP chat: ");
                         String targetUsername = scanner.nextLine();
                         String chatName = userName + "&" + targetUsername;
@@ -55,7 +66,7 @@ public class ClientRunnable implements Runnable {
                     }
                     else if (userChoice.equals("2")) {
                         ResultSet resultSet = dbHandler.fetchRecords("Users");
-                        dbHandler.printRecords(resultSet);
+                        printReadyUsers(resultSet);
                         System.out.print("Enter usernames (separated with '|', e.g. Username1|Username2|Username3) to start a group chat: ");
                         String chatAttendances = scanner.nextLine();
                         System.out.println("enter your group's name:");
@@ -65,7 +76,7 @@ public class ClientRunnable implements Runnable {
                     }
                     else if (userChoice.equals("3")){
                         ResultSet resultSet = dbHandler.fetchRecords("Users");
-                        dbHandler.printRecords(resultSet);
+                        printReadyUsers(resultSet);
                         System.out.print("Enter usernames (separated with '|', e.g. Username1|Username2|Username3) to start a channel: ");
                         String chatAttendances = scanner.nextLine();
                         System.out.println("enter your channel's name:");
@@ -75,6 +86,7 @@ public class ClientRunnable implements Runnable {
                     }
                     else if (userChoice.equals("4")){
                         System.out.println("Waiting for invitations...");
+                        dbHandler.alterUserReady(userName, true);
                     }
                     else {
                         System.out.println("[ERROR] Operation number not found.");

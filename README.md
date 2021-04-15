@@ -7,3 +7,6 @@ GRANT ALL PRIVILEGES ON database_name.* TO 'username'@'localhost';
 
 ### Add jar file to class path
 export CLASSPATH=$CLASSPATH:/home/farzam/workspace/java/SepidehProject/mysql-connector-java-8.0.23/mysql-connector-java-8.0.23.jar
+
+### Extend number of SQL Conections
+SET GLOBAL max_connections = 1024;

@@ -30,14 +30,14 @@ public class ServerThread extends Thread {
 
             while(true) {
                 String userInput = input.readLine();
-                if(userInput.equalsIgnoreCase("exit")) {
+                if(userInput.equalsIgnoreCase("[Left Server]")) {
                     String status = "offline";
                     dbHandler.alterUserStatus(userName, status);
                     String message = userName + " left the server!";
                     System.out.println(message);
-                    output.println("[Left Server]");
                 } else {
                     // e.g. "Username, Password, FirstTimeLoggedIn"
+                    // Authentication
                     if (userInput.split(",").length == 3){
                         int userPort = socket.getPort();
                         String[] tokens = userInput.split(",");
@@ -65,7 +65,9 @@ public class ServerThread extends Thread {
                             }
                         }
 
-                    } else if (userInput.split(",").length == 4){
+                    }
+                    // Create Chat
+                    else if (userInput.split(",").length == 4){
                         String chatType = userInput.split(",")[0];
                         String chatName = userInput.split(",")[1];
                         String chatOwner = userInput.split(",")[2];
@@ -80,6 +82,7 @@ public class ServerThread extends Thread {
 
                                 setChatAttendancesChat(attendancesArrayList, chatName);
                                 setChatAttendancesBusy(attendancesArrayList);
+                                setChatAttendancesNotReady(attendancesArrayList);
                                 chatAttendancesSendMessages(attendancesArrayList, message);
 
                                 System.out.println(message);
@@ -95,6 +98,7 @@ public class ServerThread extends Thread {
                             output.println("Welcome to the server! You can leave server by sending 'exit'.");
                         }
                     }
+                    // Handle Messages
                     else if (userInput.split("\\|")[0].split(":")[0].equals("ChatName")){
                         String chatName = userInput.split("\\|")[0].split(":")[1];
                         String chatType = dbHandler.getChatType(chatName);
@@ -110,9 +114,11 @@ public class ServerThread extends Thread {
 
                             dbHandler.alterUserBusy(userName, false);
                             dbHandler.alterUserReady(userName, false);
+                            chatAttendancesSendMessages(userChatAttendancesArrayList, "User " + userName + " left the chat " + chatName + ".");
+                            dbHandler.alterUserChat(userName, "null");
 
+                            System.out.println("User " + userName + " left the chat " + chatName + ".");
                             output.println("You left the chat " + userChat);
-                            chatAttendancesSendMessages(userChatAttendancesArrayList, "User " + userName + " left the chat.");
                             output.println("Welcome to the server! You can leave server by sending 'exit'.");
                         } else {
                             String chatAttendances = dbHandler.getChatAttendances(chatName);
@@ -131,6 +137,9 @@ public class ServerThread extends Thread {
                             }
                         }
                     }
+                    else if (userInput.equals("[ERROR] Operation number not found.")){
+                        output.println("Welcome to the server! You can leave server by sending 'exit'.");
+                    }
                 }
             }
         } catch (Exception e) {
@@ -141,6 +150,12 @@ public class ServerThread extends Thread {
                 error.printStackTrace();
             }
             System.out.println(userName + " disconnected unexpectedly!");
+        }
+    }
+
+    private void setChatAttendancesNotReady(ArrayList<String> attendancesArrayList) throws SQLException {
+        for (String username : attendancesArrayList){
+            dbHandler.alterUserReady(username, false);
         }
     }
 

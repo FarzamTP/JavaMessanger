@@ -26,7 +26,7 @@ public class ClientRunnable implements Runnable {
             String status = resultSet.getString("status");
             boolean ready = resultSet.getBoolean("ready");
             if (!username.equals(userName) && ready && status.equals("online")){
-                System.out.println("Username: " + username + ", Status: " + status + " Ready: " + ready);
+                System.out.println("Username: " + username + ", Status: " + status + ", Ready: " + ready);
             }
         }
     }
@@ -34,16 +34,17 @@ public class ClientRunnable implements Runnable {
     @Override
     public void run() {
         try {
-            while(true) {
-                Scanner scanner = new Scanner(System.in);
-                DBConnector dbHandler = new DBConnector();
+            Scanner scanner = new Scanner(System.in);
+            DBConnector dbHandler = new DBConnector();
 
+            while(true) {
                 String authenticationError = "Password incorrect. Authentication failed, please try again later.";
                 String helpTextTrigger = "Welcome to the server! You can leave server by sending 'exit'.";
-                String helpText = "1. Use Private Chat\n2. Use Group Chat\n3. Use Channels\n4. Wait for chat invitations";
-                String exitText = "[Left Server]";
+                String helpText = "1. Use Private Chat\n2. Use Group Chat\n3. Use Channels\n4. Wait for chat invitations\n5. exit";
+                String leftServer = "[Left Server]";
 
                 String response = input.readLine();
+                System.out.println("RESPONSE: ==> " + response);
 
                 if (response.equals(authenticationError)) {
                     System.out.println("[ERROR] " + authenticationError);
@@ -88,15 +89,17 @@ public class ClientRunnable implements Runnable {
                         System.out.println("Waiting for invitations...");
                         dbHandler.alterUserReady(userName, true);
                     }
+                    else if (userChoice.equals("5") || userChoice.equalsIgnoreCase("exit")){
+                        System.out.println("Disconnected from the server.\nBye " + userName);
+                        output.println(leftServer);
+                        output.close();
+                        socket.close();
+                        System.exit(0);
+                    }
                     else {
                         System.out.println("[ERROR] Operation number not found.");
+                        output.println("[ERROR] Operation number not found.");
                     }
-                }
-                else if (response.equals(exitText)){
-                    System.out.println("Disconnected from the server.\nBye " + userName);
-                    output.close();
-                    socket.close();
-                    System.exit(0);
                 }
                 else {
                     System.out.println(response);

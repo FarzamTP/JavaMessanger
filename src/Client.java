@@ -39,8 +39,8 @@ public class Client {
                     output.println("Username:" + userName + ",Password:" + password + ",FirstTimeLoggedIn:" + firstTimeLoggedIn);
                 }
                 else {
-                    if (dbHandler.getUserBusy(userName)){
-                        String chatName = dbHandler.getChatName(userName);
+                    String chatName = dbHandler.getChatName(userName);
+                    if (!chatName.equalsIgnoreCase("null")){
                         userInput = scanner.nextLine();
                         String finalUserInput = "ChatName:" + chatName + "|" + userInput;
                         output.println(finalUserInput);

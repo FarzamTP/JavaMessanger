@@ -103,6 +103,19 @@ class DBConnector {
         return isBusy;
     }
 
+    public boolean getUserReady(String targetUsername) throws SQLException {
+        boolean isReady = false;
+        ResultSet resultSet = fetchRecords("Users");
+        while(resultSet.next()) {
+            String username = resultSet.getString("username");
+            isReady = resultSet.getBoolean("ready");
+            if (targetUsername.equals(username)){
+                break;
+            }
+        }
+        return isReady;
+    }
+
     public String getChatName(String targetUsername) throws SQLException {
         String chatName = null;
         ResultSet resultSet = fetchRecords("Users");
@@ -230,8 +243,6 @@ class DBConnector {
 
     public static void main(String[] args) throws SQLException {
         DBConnector db = new DBConnector();
-        boolean a = db.getUserBusy("Test1");
-        System.out.println(a);
     }
 }
 

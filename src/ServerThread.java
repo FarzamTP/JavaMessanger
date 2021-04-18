@@ -21,34 +21,6 @@ public class ServerThread extends Thread {
         this.threadList = threads;
     }
 
-    private void saveFile(String fileName, int fileSize) throws IOException, ClassNotFoundException {
-
-        try {
-            is = new ObjectInputStream(socket.getInputStream());
-            os = new ObjectOutputStream(socket.getOutputStream());
-        } catch (Exception e){
-            System.out.println(e.toString());
-        }
-
-        byte[] file_data = (byte[]) is.readObject();
-
-        FileOutputStream fos = new FileOutputStream("Duplicate-" + fileName);
-
-        int filesize = fileSize; // Send file size in separate msg
-        int read = 0;
-        int totalRead = 0;
-        int remaining = filesize;
-        while((read = is.read(file_data, 0, Math.min(file_data.length, remaining))) > 0) {
-            totalRead += read;
-            remaining -= read;
-            System.out.println("read " + totalRead + " bytes.");
-            fos.write(file_data, 0, read);
-        }
-
-        fos.close();
-        is.close();
-        os.flush();
-    }
 
     @Override
     public void run() {
@@ -152,13 +124,6 @@ public class ServerThread extends Thread {
                         System.out.println("User " + userName + " left the chat " + chatName + ".");
                         output.println("You left the chat " + userChat);
                         output.println("Welcome to the server! You can leave server by sending 'exit'.");
-                    }
-                    else if (userInput.split("\\|")[1].split(" ")[0].equals("sendFile")){
-                        System.out.println("First STEP!");
-                        String fileName = userInput.split(" ")[1];
-                        int fileSize = Integer.parseInt(userInput.split(" ")[2]);
-                        System.out.println("File name: " + fileName + " with size: " + fileSize);
-//                        saveFile(fileName, fileSize);
                     }
                     else {
                         String chatAttendances = dbHandler.getChatAttendances(chatName);

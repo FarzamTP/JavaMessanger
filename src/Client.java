@@ -45,24 +45,8 @@ public class Client {
                 else {
                     if (dbHandler.getUserBusy(userName)){
                         userInput = scanner.nextLine();
-
                         String chatName = dbHandler.getChatName(userName);
                         String finalUserInput = "ChatName:" + chatName + "|" + userInput;
-
-                        if (userInput.startsWith("sendFile")){
-                            String fileName = userInput.split(" ")[1];
-                            File myFile = new File(fileName);
-                            boolean fileExists = myFile.exists();
-                            if (fileExists){
-                                int fileSize = (int) myFile.length();
-                                System.out.println("File exists!");
-                                System.out.println("Attempting to read file " + fileName);
-                                finalUserInput += (" " + fileSize);
-                                readSendFile(fileName);
-                            } else {
-                                System.out.println("File doesn't exist!");
-                            }
-                        }
                         output.println(finalUserInput);
                     }
                 }

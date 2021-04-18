@@ -1,6 +1,4 @@
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -13,6 +11,8 @@ public class ServerThread extends Thread {
     private String userName;
     private String status;
     private String chatName;
+    private ObjectOutputStream os = null;
+    private ObjectInputStream is = null;
 
     DBConnector dbHandler = new DBConnector();
 
@@ -21,125 +21,168 @@ public class ServerThread extends Thread {
         this.threadList = threads;
     }
 
+    private void saveFile(String fileName, int fileSize) throws IOException, ClassNotFoundException {
+
+        try {
+            is = new ObjectInputStream(socket.getInputStream());
+            os = new ObjectOutputStream(socket.getOutputStream());
+        } catch (Exception e){
+            System.out.println(e.toString());
+        }
+
+        byte[] file_data = (byte[]) is.readObject();
+
+        FileOutputStream fos = new FileOutputStream("Duplicate-" + fileName);
+
+        int filesize = fileSize; // Send file size in separate msg
+        int read = 0;
+        int totalRead = 0;
+        int remaining = filesize;
+        while((read = is.read(file_data, 0, Math.min(file_data.length, remaining))) > 0) {
+            totalRead += read;
+            remaining -= read;
+            System.out.println("read " + totalRead + " bytes.");
+            fos.write(file_data, 0, read);
+        }
+
+        fos.close();
+        is.close();
+        os.flush();
+    }
+
     @Override
     public void run() {
-
         try {
             BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             output = new PrintWriter(socket.getOutputStream(),true);
 
             while(true) {
                 String userInput = input.readLine();
-                if(userInput.equalsIgnoreCase("[Left Server]")) {
+                output.println("[Server]: You sent: " + userInput);
+
+                System.out.println("INP: ==> " + userInput);
+
+                if(userInput.equals("[Left Server]")) {
                     String status = "offline";
                     dbHandler.alterUserStatus(userName, status);
                     String message = userName + " left the server!";
                     System.out.println(message);
-                } else {
-                    // e.g. "Username, Password, FirstTimeLoggedIn"
-                    // Authentication
-                    if (userInput.split(",").length == 3){
-                        int userPort = socket.getPort();
-                        String[] tokens = userInput.split(",");
-                        userName = tokens[0].split(":")[1];
-                        String userPassword = tokens[1].split(":")[1];
-                        boolean userFirstTimeLoggedIn = Boolean.parseBoolean(tokens[2].split(":")[1]);
+                }
+                // e.g. "Username, Password, FirstTimeLoggedIn"
+                // Authentication
+                else if (userInput.split(",").length == 3){
+                    int userPort = socket.getPort();
+                    String[] tokens = userInput.split(",");
+                    userName = tokens[0].split(":")[1];
+                    String userPassword = tokens[1].split(":")[1];
+                    boolean userFirstTimeLoggedIn = Boolean.parseBoolean(tokens[2].split(":")[1]);
 
-                        if (userFirstTimeLoggedIn){
+                    if (userFirstTimeLoggedIn){
+                        status = "online";
+                        chatName = "null";
+                        dbHandler.insertUser(userPort, userName, userPassword, status, chatName);
+                        String message = "User " + userName + " joined us!";
+                        System.out.println(message);
+                        output.println("Welcome to the server! You can leave server by sending 'exit'.");
+                    } else {
+                        if (dbHandler.authenticateUser(userName, userPassword)){
                             status = "online";
-                            chatName = "null";
-                            dbHandler.insertUser(userPort, userName, userPassword, status, chatName);
-                            String message = "User " + userName + " joined us!";
+                            dbHandler.alterUserStatus(userName, status);
+                            String message = "User " + userName + " has logged in!";
                             System.out.println(message);
                             output.println("Welcome to the server! You can leave server by sending 'exit'.");
                         } else {
-                            if (dbHandler.authenticateUser(userName, userPassword)){
-                                status = "online";
-                                dbHandler.alterUserStatus(userName, status);
-                                String message = "User " + userName + " has logged in!";
-                                System.out.println(message);
-                                output.println("Welcome to the server! You can leave server by sending 'exit'.");
-                            } else {
-                                System.out.println("User " + userName + " failed to log in.");
-                                output.println("Password incorrect. Authentication failed, please try again later.");
-                            }
+                            System.out.println("User " + userName + " failed to log in.");
+                            output.println("Password incorrect. Authentication failed, please try again later.");
                         }
-
                     }
-                    // Create Chat
-                    else if (userInput.split(",").length == 4){
-                        String chatType = userInput.split(",")[0];
-                        String chatName = userInput.split(",")[1];
-                        String chatOwner = userInput.split(",")[2];
-                        String chatAttendances = userInput.split(",")[3];
 
-                        chatAttendances = includeOwnerInAttendances(userName, chatAttendances);
-                        ArrayList<String> attendancesArrayList = splitAndConvertToArrayList(chatAttendances);
+                }
+                // Create Chat
+                else if (userInput.split(",").length == 4){
+                    String chatType = userInput.split(",")[0];
+                    String chatName = userInput.split(",")[1];
+                    String chatOwner = userInput.split(",")[2];
+                    String chatAttendances = userInput.split(",")[3];
 
-                        if (checkIfAttendancesExist(attendancesArrayList)){
-                            if (checkIfAttendancesReady(attendancesArrayList)){
-                                String message = "Welcome to " + chatType + " Chat '" + chatName + "' started by " + chatOwner + " with " + chatAttendances;
+                    chatAttendances = includeOwnerInAttendances(userName, chatAttendances);
+                    ArrayList<String> attendancesArrayList = splitAndConvertToArrayList(chatAttendances);
 
-                                setChatAttendancesChat(attendancesArrayList, chatName);
-                                setChatAttendancesBusy(attendancesArrayList);
-                                setChatAttendancesNotReady(attendancesArrayList);
-                                chatAttendancesSendMessages(attendancesArrayList, message);
+                    if (checkIfAttendancesExist(attendancesArrayList)){
+                        if (checkIfAttendancesReady(attendancesArrayList)){
+                            String message = "Welcome to " + chatType + " Chat '" + chatName + "' started by " + chatOwner + " with " + chatAttendances;
 
-                                System.out.println(message);
+                            setChatAttendancesChat(attendancesArrayList, chatName);
+                            setChatAttendancesBusy(attendancesArrayList);
+                            setChatAttendancesNotReady(attendancesArrayList);
+                            chatAttendancesSendMessages(attendancesArrayList, message);
 
-                                Chat chat = new Chat(chatType, chatName, chatOwner, chatAttendances);
-                                chat.save();
-                            } else {
-                                output.println("[ERROR] one or more of selected users are not `ready` to chat.\nPlease try again.");
-                                output.println("Welcome to the server! You can leave server by sending 'exit'.");
-                            }
+                            System.out.println(message);
+
+                            Chat chat = new Chat(chatType, chatName, chatOwner, chatAttendances);
+                            chat.save();
                         } else {
-                            output.println("[ERROR] one or more of selected users don't exist.\nPlease try again.");
+                            output.println("[ERROR] one or more of selected users are not `ready` to chat.\nPlease try again.");
                             output.println("Welcome to the server! You can leave server by sending 'exit'.");
                         }
-                    }
-                    // Handle Messages
-                    else if (userInput.split("\\|")[0].split(":")[0].equals("ChatName")){
-                        String chatName = userInput.split("\\|")[0].split(":")[1];
-                        String chatType = dbHandler.getChatType(chatName);
-                        String chatOwner = dbHandler.getChatOwner(chatName);
-
-                        String msg = userInput.split("\\|")[1];
-                        String message = "[" + chatName + "] " + userName + ": " + msg;
-
-                        if (msg.equalsIgnoreCase("exit")){
-                            String userChat = dbHandler.getChatName(userName);
-                            String userChatAttendances = dbHandler.getChatAttendances(userChat);
-                            ArrayList<String> userChatAttendancesArrayList = splitAndConvertToArrayList(userChatAttendances);
-
-                            dbHandler.alterUserBusy(userName, false);
-                            dbHandler.alterUserReady(userName, false);
-                            chatAttendancesSendMessages(userChatAttendancesArrayList, "User " + userName + " left the chat " + chatName + ".");
-                            dbHandler.alterUserChat(userName, "null");
-
-                            System.out.println("User " + userName + " left the chat " + chatName + ".");
-                            output.println("You left the chat " + userChat);
-                            output.println("Welcome to the server! You can leave server by sending 'exit'.");
-                        } else {
-                            String chatAttendances = dbHandler.getChatAttendances(chatName);
-                            ArrayList<String> attendancesArrayList = splitAndConvertToArrayList(chatAttendances);
-
-                            if (chatType.equals("Channel")){
-                                if (chatOwner.equals(userName)){
-                                    chatAttendancesSendMessages(attendancesArrayList, message);
-                                    System.out.println(message);
-                                } else {
-                                    message = "[" + chatName + "] " + "You are not channel creator, and you can not send messages.";
-                                    output.println(message);
-                                }
-                            } else {
-                                chatAttendancesSendMessages(attendancesArrayList, message);
-                            }
-                        }
-                    }
-                    else if (userInput.equals("[ERROR] Operation number not found.")){
+                    } else {
+                        output.println("[ERROR] one or more of selected users don't exist.\nPlease try again.");
                         output.println("Welcome to the server! You can leave server by sending 'exit'.");
                     }
+                }
+                // Handle Messages
+                else if (userInput.split("\\|")[0].split(":")[0].equals("ChatName")){
+                    String chatName = userInput.split("\\|")[0].split(":")[1];
+                    String chatType = dbHandler.getChatType(chatName);
+                    String chatOwner = dbHandler.getChatOwner(chatName);
+
+                    String msg = userInput.split("\\|")[1];
+                    String message = "[" + chatName + "] " + userName + ": " + msg;
+
+                    if (msg.equalsIgnoreCase("exit")){
+                        String userChat = dbHandler.getChatName(userName);
+                        String userChatAttendances = dbHandler.getChatAttendances(userChat);
+                        ArrayList<String> userChatAttendancesArrayList = splitAndConvertToArrayList(userChatAttendances);
+
+                        dbHandler.alterUserBusy(userName, false);
+                        dbHandler.alterUserReady(userName, false);
+                        chatAttendancesSendMessages(userChatAttendancesArrayList, "User " + userName + " left the chat " + chatName + ".");
+                        dbHandler.alterUserChat(userName, "null");
+
+                        System.out.println("User " + userName + " left the chat " + chatName + ".");
+                        output.println("You left the chat " + userChat);
+                        output.println("Welcome to the server! You can leave server by sending 'exit'.");
+                    }
+                    else if (userInput.split("\\|")[1].split(" ")[0].equals("sendFile")){
+                        System.out.println("First STEP!");
+                        String fileName = userInput.split(" ")[1];
+                        int fileSize = Integer.parseInt(userInput.split(" ")[2]);
+                        System.out.println("File name: " + fileName + " with size: " + fileSize);
+//                        saveFile(fileName, fileSize);
+                    }
+                    else {
+                        String chatAttendances = dbHandler.getChatAttendances(chatName);
+                        ArrayList<String> attendancesArrayList = splitAndConvertToArrayList(chatAttendances);
+
+                        if (chatType.equals("Channel")){
+                            if (chatOwner.equals(userName)){
+                                chatAttendancesSendMessages(attendancesArrayList, message);
+                                System.out.println(message);
+                            } else {
+                                message = "[" + chatName + "] " + "You are not channel creator, and you can not send messages.";
+                                output.println(message);
+                            }
+                        }
+                        else {
+                            chatAttendancesSendMessages(attendancesArrayList, message);
+                        }
+                    }
+                }
+                else if (userInput.equals("[ERROR] Operation number not found.")){
+                        output.println("Welcome to the server! You can leave server by sending 'exit'.");
+                    }
+                else {
+                    System.out.println("HERE IT IS! ELSE!!!!");
                 }
             }
         } catch (Exception e) {

@@ -4,15 +4,17 @@ import java.util.Scanner;
 
 public class Client {
 
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        String userInput = "";
-        String userName = "None";
-        String password;
-        boolean firstTimeLoggedIn;
+    private Socket socket;
+    String userInput = "";
+    String userName = "None";
+    String password;
+    boolean firstTimeLoggedIn;
+    private static BufferedInputStream bis = null;
+    private static ObjectOutputStream os = null;
 
-        try{
-            Socket socket = new Socket("localhost", 9999);
+    public Client(){
+        try {
+            socket = new Socket("localhost", 9999);
             System.out.println("Connected to server localhost with port 9999");
 
             BufferedReader input = new BufferedReader( new InputStreamReader(socket.getInputStream()));
@@ -23,6 +25,8 @@ public class Client {
             ClientRunnable clientRun = new ClientRunnable(socket);
 
             new Thread(clientRun).start();
+
+            Scanner scanner = new Scanner(System.in);
 
             while (true){
                 if (userName.equals("None")) {
@@ -39,10 +43,26 @@ public class Client {
                     output.println("Username:" + userName + ",Password:" + password + ",FirstTimeLoggedIn:" + firstTimeLoggedIn);
                 }
                 else {
-                    String chatName = dbHandler.getChatName(userName);
-                    if (!chatName.equalsIgnoreCase("null")){
+                    if (dbHandler.getUserBusy(userName)){
                         userInput = scanner.nextLine();
+
+                        String chatName = dbHandler.getChatName(userName);
                         String finalUserInput = "ChatName:" + chatName + "|" + userInput;
+
+                        if (userInput.startsWith("sendFile")){
+                            String fileName = userInput.split(" ")[1];
+                            File myFile = new File(fileName);
+                            boolean fileExists = myFile.exists();
+                            if (fileExists){
+                                int fileSize = (int) myFile.length();
+                                System.out.println("File exists!");
+                                System.out.println("Attempting to read file " + fileName);
+                                finalUserInput += (" " + fileSize);
+                                readSendFile(fileName);
+                            } else {
+                                System.out.println("File doesn't exist!");
+                            }
+                        }
                         output.println(finalUserInput);
                     }
                 }
@@ -50,5 +70,23 @@ public class Client {
         } catch (Exception e) {
             System.out.println(e.toString());
         }
+    }
+
+    public void readSendFile(String fileName) throws IOException {
+        DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+        FileInputStream fis = new FileInputStream(fileName);
+
+        byte[] buffer = new byte[4096];
+
+        while (fis.read(buffer) > 0) {
+            dos.write(buffer);
+        }
+
+        fis.close();
+        dos.close();
+    }
+
+    public static void main(String[] args) {
+        new Client();
     }
 }

@@ -15,6 +15,9 @@ public class Server {
             dbHandler.createTableUsers();
             dbHandler.dropTable("Chats");
             dbHandler.createTableChats();
+            dbHandler.dropTable("Messages");
+            dbHandler.createTableMessages();
+
             System.out.println("Database initialized.\nWaiting for client to connect...");
             while(true) {
                 Socket socket = serversocket.accept();

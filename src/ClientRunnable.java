@@ -44,7 +44,6 @@ public class ClientRunnable implements Runnable {
                 String leftServer = "[Left Server]";
 
                 String response = input.readLine();
-                System.out.println("RESPONSE: ==> " + response);
 
                 if (response.equals(authenticationError)) {
                     System.out.println("[ERROR] " + authenticationError);

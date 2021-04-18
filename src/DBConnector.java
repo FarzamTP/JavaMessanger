@@ -103,19 +103,6 @@ class DBConnector {
         return isBusy;
     }
 
-    public boolean getUserReady(String targetUsername) throws SQLException {
-        boolean isReady = false;
-        ResultSet resultSet = fetchRecords("Users");
-        while(resultSet.next()) {
-            String username = resultSet.getString("username");
-            isReady = resultSet.getBoolean("ready");
-            if (targetUsername.equals(username)){
-                break;
-            }
-        }
-        return isReady;
-    }
-
     public String getChatName(String targetUsername) throws SQLException {
         String chatName = null;
         ResultSet resultSet = fetchRecords("Users");
@@ -239,6 +226,21 @@ class DBConnector {
             }
         }
         return chatOwner;
+    }
+
+    public void createTableMessages() throws SQLException {
+        String query = "CREATE TABLE Messages (id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, chat VARCHAR (128), sender VARCHAR (128), message VARCHAR (1024));";
+        Statement st = connector.setStatement();
+        st.executeUpdate(query);
+        System.out.println("Table Messages has been created.");
+    }
+
+    public void insertMessage(String username, String message) throws SQLException {
+        String userChat = getChatName(username);
+        String query = "INSERT INTO Messages (chat, sender, message) VALUES ('" + userChat + "', '" + username + "', '" + message + "');";
+        System.out.println(query);
+        Statement st = connector.setStatement();
+        st.executeUpdate(query);
     }
 
     public static void main(String[] args) throws SQLException {

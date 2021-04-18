@@ -32,8 +32,6 @@ public class ServerThread extends Thread {
                 String userInput = input.readLine();
                 output.println("[Server]: You sent: " + userInput);
 
-                System.out.println("INP: ==> " + userInput);
-
                 if(userInput.equals("[Left Server]")) {
                     String status = "offline";
                     dbHandler.alterUserStatus(userName, status);
@@ -128,6 +126,7 @@ public class ServerThread extends Thread {
                     else {
                         String chatAttendances = dbHandler.getChatAttendances(chatName);
                         ArrayList<String> attendancesArrayList = splitAndConvertToArrayList(chatAttendances);
+                        dbHandler.insertMessage(userName, msg);
 
                         if (chatType.equals("Channel")){
                             if (chatOwner.equals(userName)){

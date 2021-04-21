@@ -238,7 +238,6 @@ class DBConnector {
     public void insertMessage(String username, String message) throws SQLException {
         String userChat = getChatName(username);
         String query = "INSERT INTO Messages (chat, sender, message) VALUES ('" + userChat + "', '" + username + "', '" + message + "');";
-        System.out.println(query);
         Statement st = connector.setStatement();
         st.executeUpdate(query);
     }
